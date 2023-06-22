@@ -1,0 +1,295 @@
+import random
+import string
+from datetime import datetime
+from prettytable import PrettyTable
+
+class Barang:
+    def __init__(self, kunci_unik, kode, nama, jumlah, harga_satuan, tanggal_kadaluarsa):
+        self.kunci_unik = kunci_unik
+        self.kode = kode
+        self.nama = nama
+        self.jumlah = jumlah
+        self.harga_satuan = harga_satuan
+        self.tanggal_kadaluarsa = tanggal_kadaluarsa
+        self.next = None
+
+class Gudang:
+    def __init__(self):
+        self.head = None
+        self.capacity = 50  # Kapasitas maksimum gudang
+        self.current_count = 0  # Jumlah barang saat ini dalam gudang
+
+    def tambah_barang(self, kunci_unik, kode, nama, jumlah, harga_satuan, tanggal_kadaluarsa):
+        try:
+            jumlah = int(jumlah)
+            harga_satuan = int(harga_satuan)
+        except ValueError:
+            print("Jumlah barang atau harga satuan bukan angka. Silakan masukkan angka.")
+            return
+
+        try:
+            tanggal_kadaluarsa = datetime.strptime(tanggal_kadaluarsa, "%Y-%m-%d").date()
+        except ValueError:
+            print("Format tanggal kadaluarsa salah. Gunakan format YYYY-MM-DD.")
+            return
+
+        if self.current_count >= self.capacity:
+            print("Gudang sudah mencapai kapasitas maksimum.")
+            return
+
+        baru = Barang(kunci_unik, kode, nama, jumlah, harga_satuan, tanggal_kadaluarsa)
+        if self.head is None:
+            self.head = baru
+        else:
+            current = self.head
+            while current.next:
+                current = current.next
+            current.next = baru
+
+        self.current_count += 1
+        print("Barang dengan kode", kode, "telah ditambahkan ke dalam gudang.")
+
+    def cari_barang(self, kode):
+        current = self.head
+        while current:
+            if current.kode == kode:
+                return current
+            current = current.next
+        return None
+
+    def cari_barang_dengan_kunci(self, kunci_unik):
+        current = self.head
+        while current:
+            if current.kunci_unik == kunci_unik:
+                return current
+            current = current.next
+        return None
+
+    def tampilkan_barang(self):
+        if self.head is None:
+            print("Gudang kosong.")
+        else:
+            table = PrettyTable()
+            table.field_names = ["Kunci Unik", "Kode Barang", "Nama Barang", "Stock Barang", "Harga Barang", "Tanggal Kadaluarsa"]
+
+            current = self.head
+            while current:
+                table.add_row([current.kunci_unik, current.kode, current.nama, current.jumlah, current.harga_satuan, current.tanggal_kadaluarsa])
+                current = current.next
+
+            print(table)
+            print("Kapasitas Gudang:", self.capacity)
+            print("Kapasitas Terisi:", self.current_count)
+            print("Kapasitas Tersisa:", self.capacity - self.current_count)
+
+    def hapus_barang(self, kode):
+        current = self.head
+        prev = None
+        found = False
+        while current and not found:
+            if current.kode == kode:
+                found = True
+            else:
+                prev = current
+                current = current.next
+        if current is None:
+            print("Barang dengan kode", kode, "tidak ditemukan.")
+        elif prev is None:
+            self.head = current.next
+            print("Barang dengan kode", kode, "telah dihapus.")
+        else:
+            prev.next = current.next
+            print("Barang dengan kode", kode, "telah dihapus.")
+
+    def cek_kadaluarsa_barang(self, kode):
+        barang = self.cari_barang(kode)
+        if barang:
+            tanggal_kadaluarsa = barang.tanggal_kadaluarsa
+            self.cek_kadaluarsa(tanggal_kadaluarsa)
+        else:
+            print("Barang dengan kode", kode, "tidak ditemukan.")
+
+    def cek_kadaluarsa(self, tanggal_kadaluarsa):
+        hari_ini = datetime.now().date()
+        if tanggal_kadaluarsa < hari_ini:
+            print("Barang sudah kadaluarsa.")
+        elif tanggal_kadaluarsa == hari_ini:
+            print("Barang kadaluarsa hari ini.")
+        else:
+            print("Barang masih dalam masa berlaku.")
+
+    def sort_barang_by_name_asc(self):
+        length = self.get_length()
+        if length <= 1:
+            return
+
+        for i in range(length - 1):
+            current = self.head
+            for j in range(length - 1 - i):
+                if current.nama > current.next.nama:
+                    self.swap_barang(current, current.next)
+                current = current.next
+
+        print("Barang diurutkan berdasarkan nama (A ke Z):")
+        self.tampilkan_barang()
+
+    def sort_barang_by_name_desc(self):
+        length = self.get_length()
+        if length <= 1:
+            return
+
+        for i in range(length - 1):
+            current = self.head
+            for j in range(length - 1 - i):
+                if current.nama < current.next.nama:
+                    self.swap_barang(current, current.next)
+                current = current.next
+
+        print("Barang diurutkan berdasarkan nama (Z ke A):")
+        self.tampilkan_barang()
+
+    def sort_barang_by_price_asc(self):
+        length = self.get_length()
+        if length <= 1:
+            return
+
+        for i in range(length - 1):
+            current = self.head
+            for j in range(length - 1 - i):
+                if current.harga_satuan > current.next.harga_satuan:
+                    self.swap_barang(current, current.next)
+                current = current.next
+
+        print("Barang diurutkan berdasarkan harga (rendah ke tinggi):")
+        self.tampilkan_barang()
+
+    def sort_barang_by_price_desc(self):
+        length = self.get_length()
+        if length <= 1:
+            return
+
+        for i in range(length - 1):
+            current = self.head
+            for j in range(length - 1 - i):
+                if current.harga_satuan < current.next.harga_satuan:
+                    self.swap_barang(current, current.next)
+                current = current.next
+
+        print("Barang diurutkan berdasarkan harga (tinggi ke rendah):")
+        self.tampilkan_barang()
+
+    def swap_barang(self, barang1, barang2):
+        barang1.kunci_unik, barang2.kunci_unik = barang2.kunci_unik, barang1.kunci_unik
+        barang1.kode, barang2.kode = barang2.kode, barang1.kode
+        barang1.nama, barang2.nama = barang2.nama, barang1.nama
+        barang1.jumlah, barang2.jumlah = barang2.jumlah, barang1.jumlah
+        barang1.harga_satuan, barang2.harga_satuan = barang2.harga_satuan, barang1.harga_satuan
+        barang1.tanggal_kadaluarsa, barang2.tanggal_kadaluarsa = barang2.tanggal_kadaluarsa, barang1.tanggal_kadaluarsa
+
+    def get_length(self):
+        length = 0
+        current = self.head
+        while current:
+            length += 1
+            current = current.next
+        return length
+
+
+def generate_kunci_unik(panjang):
+    karakter = string.ascii_letters + string.digits
+    kunci_unik = ''.join(random.choice(karakter) for _ in range(panjang))
+    return kunci_unik
+
+# Isi gudang dengan beberapa barang
+gudang = Gudang()
+print("==================================")
+print("SELAMAT DATANG DI GUDANG PT ABC")
+print("==================================")
+print("Daftar Barang di Gudang:")
+
+# Create instances of Barang and link them together
+barang1 = Barang("07spj", "K001", "Pensil", 100, 2000, "2023-12-31")
+barang2 = Barang("ZT0Ex", "K002", "Buku Tulis", 50, 5000, "2024-06-30")
+barang3 = Barang("cPy5c", "K003", "Penghapus", 200, 1000, "2023-10-15")
+barang4 = Barang("jsWeg", "K004", "Spidol", 80, 3000, "2023-11-30")
+barang5 = Barang("HPxy5", "K005", "Pensil Warna", 120, 4000, "2024-02-28")
+
+barang1.next = barang2
+barang2.next = barang3
+barang3.next = barang4
+barang4.next = barang5
+
+# Set the head of the warehouse to the first barang
+gudang.head = barang1
+gudang.current_count = 5
+gudang.tampilkan_barang()
+
+while True:
+    print('')
+    print('Pilihan opsi:')
+    print("1. Tambah Barang")
+    print("2. Tampilkan Daftar Barang")
+    print("3. Cari Barang dengan Kunci Unik")
+    print("4. Hapus Barang")
+    print("5. Cek Kadaluarsa Barang")
+    print("6. Sortir Barang")
+    print("7. Keluar")
+
+    pilihan = input("Masukkan pilihan Anda: ")
+
+    if pilihan == "1":
+        panjang_kunci = int(input("Masukkan panjang kunci unik: "))
+        kunci_unik = generate_kunci_unik(panjang_kunci)
+        print("Kunci unik:", kunci_unik)
+        kode = input("Masukkan kode barang: ")
+        nama = input("Masukkan nama barang: ")
+        jumlah = input("Masukkan jumlah barang: ")
+        harga_satuan = input("Masukkan harga satuan barang: ")
+        tanggal_kadaluarsa = input("Masukkan tanggal kadaluarsa barang (YYYY-MM-DD): ")
+        gudang.tambah_barang(kunci_unik, kode, nama, jumlah, harga_satuan, tanggal_kadaluarsa)
+    elif pilihan == "2":
+        print("Daftar Barang di Gudang:")
+        gudang.tampilkan_barang()
+    elif pilihan == "3":
+        kunci_unik = input("Masukkan kunci unik: ")
+        barang = gudang.cari_barang_dengan_kunci(kunci_unik)
+        if barang:
+            print("Kode Barang:", barang.kode)
+            print("Nama Barang:", barang.nama)
+            print("Jumlah Barang:", barang.jumlah)
+            print("Harga Satuan:", barang.harga_satuan)
+            print("Tanggal Kadaluarsa:", barang.tanggal_kadaluarsa)
+        else:
+            print("Barang dengan kunci unik", kunci_unik, "tidak ditemukan.")
+    elif pilihan == "4":
+        kode = input("Masukkan kode barang yang ingin dihapus: ")
+        gudang.hapus_barang(kode)
+    elif pilihan == "5":
+        kode = input("Masukkan kode barang yang ingin dicek: ")
+        gudang.cek_kadaluarsa_barang(kode)
+    elif pilihan == "6":
+        print("==========")
+        print("SORTIR BARANG")
+        print("==========")
+        print("1. Berdasarkan Nama (A ke Z)")
+        print("2. Berdasarkan Nama (Z ke A)")
+        print("3. Berdasarkan Harga (rendah ke tinggi)")
+        print("4. Berdasarkan Harga (tinggi ke rendah)")
+
+        pilihan_sortir = input("Masukkan pilihan sortir Anda: ")
+
+        if pilihan_sortir == "1":
+            gudang.sort_barang_by_name_asc()
+        elif pilihan_sortir == "2":
+            gudang.sort_barang_by_name_desc()
+        elif pilihan_sortir == "3":
+            gudang.sort_barang_by_price_asc()
+        elif pilihan_sortir == "4":
+            gudang.sort_barang_by_price_desc()
+        else:
+            print("Pilihan sortir tidak valid.")
+    elif pilihan == "7":
+        print("Terima kasih. Sampai jumpa!")
+        break
+    else:
+        print("Pilihan tidak valid. Silakan pilih angka 1-7.")
